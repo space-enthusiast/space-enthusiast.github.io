@@ -1,7 +1,8 @@
 ---
 layout: post
 title:  "데이터베이스 공부 - 5"
-tags: [school,database,oracle-21c]
+tags: [database,oracle-21c]
+categories: [school]
 ---
 
 # 데이터 무결성(Data Integrity)

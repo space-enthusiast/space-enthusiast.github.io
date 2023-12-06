@@ -2,7 +2,8 @@
 layout: post
 title:  "jekyll로 블로그 만들기"
 date:   2023-10-24 05:49:10 +0000
-tags: [jekyll,blog,ssg]
+tags: [jekyll,ssg]
+categories: [blog]
 ---
 
 - jekyll 이란?

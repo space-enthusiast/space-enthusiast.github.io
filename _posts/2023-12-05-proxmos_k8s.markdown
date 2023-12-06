@@ -1,0 +1,216 @@
+---
+layout: post
+title:  "proxmox로 k8s 세팅하기 (공사중)"
+tags: [proxmox, k8s]
+categories: [home-lab]
+date: 2023-12-05 07:06:10 +0000
+---
+
+# ubuntu template
+
+- name: ubuntu
+- username: ubuntu
+- password: 0000
+
+1. clone the 100 (ubuntu-template) (this might take a while)
+2. sudo apt update && sudo apt dist-upgrade
+3. sudo apt install qemu-guest-agent
+4. systemctl start qemu-gurst-agent
+5. sudo apt install containerd (systemctl status containerd)
+6. sudo mkdir /etc/containerd
+7. containerd config default | sudo tee /etc/containerd/config.toml
+8. sudo nano /etc/containerd/config.toml
+   set SystemdCgroup to true
+```
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+            BinaryName = ""
+            CriuImagePath = ""
+            CriuPath = ""
+            CriuWorkPath = ""
+            IoGid = 0
+            IoUid = 0
+            NoNewKeyring = false
+            NoPivotRoot = false
+            Root = ""
+            ShimCgroup = ""
+            SystemdCgroup = true
+```
+9. sudo nano /etc/fstab
+   disable swap by commenting the `/swap.img       none    swap    sw      0       0`
+   by adding a '#' at the first line
+```
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/ubuntu-vg/ubuntu-lv during curtin installation
+/dev/disk/by-id/dm-uuid-LVM-qHn1H32G13rg11gyPMJlORL38iUNYTGtHXNeJ05fNu8dPj3lPIV5eyhqX6O9QALi / ext4 defaults 0 1
+# /boot was on /dev/sda2 during curtin installation
+/dev/disk/by-uuid/48146b30-37e8-409a-b5cd-65cbc6e7b5a2 /boot ext4 defaults 0 1
+#/swap.img       none    swap    sw      0       0
+```
+10. sudo nano /etc/sysctl.conf
+    uncomment the `net.ipv4.ip_forward=1`
+```
+...
+# Uncomment the next line to enable TCP/IP SYN cookies
+# See http://lwn.net/Articles/277146/
+# Note: This may impact IPv6 TCP sessions too
+#net.ipv4.tcp_syncookies=1
+
+# Uncomment the next line to enable packet forwarding for IPv4
+net.ipv4.ip_forward=1
+
+# Uncomment the next line to enable packet forwarding for IPv6
+#  Enabling this option disables Stateless Address Autoconfiguration
+#  based on Router Advertisements for this host
+#net.ipv6.conf.all.forwarding=1
+...
+```
+11. sudo nano /etc/modules-load.d/k8s.conf
+    create file and add following content (ensures briging is fully supported in the cluster)
+```
+br_netfilter
+```
+
+# kubernetes install
+1. gpg key for k8s repository access
+```
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+```
+2. add the k8s repository & update it
+```
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://dl.k8s.io/apt/doc/apt-key.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update -y
+```
+3. install k8s related cli tool
+```
+sudo apt install kubeadm kubectl kubelet
+
+# kubeadm: tool to bootstrap a cluster, initialize cluster, adding a node to a cluster, version upgrade etc.
+# kubectl: command line utility
+# kubelet: agent to faciltates communication between the nodes api's for additonal functionality
+```
+4. process for proxmos template creation (optional)
+```
+sudo cloud-init clean
+
+sudo rm -rf /var/lib/cloud/instances
+
+sudo truncate -s 0 /etc/machine-id
+
+sudo rm -rf /var/lib/dbus/machine-id
+
+sudo ln -s /etc/machine-id /var/lib/dbus/machine-id
+
+ls -l /var/lib/dbus/machine-id #(optional check if its correctly linked)
+```
+> this process had a ip problem add this to the `/etc/netplan/00-installer-config.yaml` to prevent having correct ip added
+> test with `sudo netplan try`
+```
+network:
+  ethernets:
+    ens18:
+      dhcp4: true
+  version: 2
+```
+
+5. (caution do this only on control k8s node)
+```
+sudo kubeadm init --control-plane-endpoint={ip_address_of_the_control_node} --node-name k8s-ctrl --pod-network-cidr=10.244.0.0/16
+```
+
+6. if the previous command was successful following ouput will comeout
+```
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+You can now join any number of control-plane nodes by copying certificate authorities
+and service account keys on each node and then running the following as root:
+
+  kubeadm join 192.168.35.88:6443 --token w0dpyl.86ei9709rbrchc1b \
+        --discovery-token-ca-cert-hash sha256:361b0a63f3c930c09b44d959bf416aa5772687349aab21b45e7666c258b0a79a \
+        --control-plane
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.35.88:6443 --token w0dpyl.86ei9709rbrchc1b \
+        --discovery-token-ca-cert-hash sha256:361b0a63f3c930c09b44d959bf416aa5772687349aab21b45e7666c258b0a79a
+```
+7. add kube config to let local user manage the cluster (from the above output)
+```
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+8. after this most of the ctrol node k8s is completed excepto for the overlay network you can check it by the below command
+```
+ubuntu@ubuntu:~$ kubectl get pods --all-namespaces
+NAMESPACE     NAME                               READY   STATUS    RESTARTS   AGE
+kube-system   coredns-5dd5756b68-7d7bg           0/1     Pending   0          6m38s
+kube-system   coredns-5dd5756b68-d8sn7           0/1     Pending   0          6m38s
+kube-system   etcd-k8s-ctrl                      1/1     Running   0          6m51s
+kube-system   kube-apiserver-k8s-ctrl            1/1     Running   0          6m50s
+kube-system   kube-controller-manager-k8s-ctrl   1/1     Running   0          6m57s
+kube-system   kube-proxy-lrst9                   1/1     Running   0          6m38s
+kube-system   kube-scheduler-k8s-ctrl            1/1     Running   0          6m57s
+```
+9. The following command will install the Flannel overlay network (an overlay network is required for this to function).
+```
+kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+```
+
+10. join command on nodes (not controler node)
+```
+sudo kubeadm join {control-node-ip}:6443 --token w0dpyl.86ei9709rbrchc1b \
+        --discovery-token-ca-cert-hash sha256:361b0a63f3c930c09b44d959bf416aa5772687349aab21b45e7666c258b0a79a \
+        --control-plane
+```
+if error re create join command (on the conrol node)
+```
+kubeadm token create --print-join-command
+```
+
+
+## validate your cluster by running a simple nginx pod
+
+1, pod yml
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-example
+  labels:
+    app: nginx
+spec:
+  containers:
+    - name: nginx
+      image: linuxserver/nginx
+      ports:
+        - containerPort: 80
+          name: "nginx-http"
+```
+
+2. apply pod yml to cluster
+```
+kubectl apply -f pod.yml
+```

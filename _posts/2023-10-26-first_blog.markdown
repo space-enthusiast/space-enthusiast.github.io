@@ -2,7 +2,8 @@
 layout: post
 title:  "First Blog!"
 date:   2023-10-24 05:49:10 +0000
-tags: [blog]
+tags: [special]
+categories: [blog]
 ---
 
 안녕하세요 첫 블로그입니다.

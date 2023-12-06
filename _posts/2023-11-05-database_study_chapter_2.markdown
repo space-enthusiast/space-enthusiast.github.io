@@ -1,7 +1,8 @@
 ---
 layout: post
 title:  "데이터베이스 공부 - 2"
-tags: [school,database,oracle-21c]
+tags: [database,oracle-21c]
+categories: [school]
 ---
 
 # 관계형 데이터 베이스 설계
