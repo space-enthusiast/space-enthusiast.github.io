@@ -1,0 +1,91 @@
+---
+layout: post
+title: "GOF chapter 2"
+tags: [design pattern, GOF]
+categories: [study, book]
+date: 2024-01-02 00:00:00 +0000
+---
+
+> 다음 포스트는 책 내용 정리 포스트입니다.
+
+# 옵저버 패턴 (Observer Pattern)
+
+옵저버 패턴은 한 객체의 상태가 바뀌면 그 객체에 의존하는 다른 객체에게 연락이 가고 자동으로 내용이 갱신되는 방식으로 일대다(one-to-many) 의존성을 정의합니다.
+
+> 출판 구독(Publish-Subscribe) 패턴과는 다르다. 해당 패턴에서는 구독자가 서로 다른 유형의 메시지에 관심을 가질 수 있고, 출판사와 구독자를 더 세세하게 분리할 수 있는 복잡한 패턴이다.
+{: .prompt-warning }
+
+다음은 옵저버 패턴을 자바에서 간단히 구현해보자
+
+```java
+interface Subject {
+  public void registerObserver(Observer o);
+  public void removeObserver(Observer o);
+  public void notifyObservers();
+  public void print();
+}
+
+interface Observer {
+  public void update();
+}
+
+public class ConcreteSubject implements Subject {
+
+  private Collection<Observer> observers = new ArrayList<>();
+
+  @Override
+  public void registerObserver(Observer o) {
+    observers.add(o);
+  }
+
+  @Override
+  public void removeObserver(Observer o) {
+    observers.remove(o);
+  }
+
+  @Override
+  public void notifyObservers() {
+    for (Observer o : observers) {
+      o.update();
+    }
+  }
+
+  @Override
+  public void print() {
+    for (Observer o : observers) {
+      o.update();
+      System.out.println(o);
+    }
+  }
+}
+
+public class ConcreteObserver implements Observer {
+  @Override
+  public void update() {
+    System.out.println("updated");
+  }
+}
+
+```
+
+## 느슨한 결합의 위력
+
+> 디자인 원칙: 상호작용하는 객체 사이에서는 가능하면 느슨한 결합을 사용해야 한다.
+{: .prompt-tip }
+
+느슨한 결합은 객체들이 상호작용을 할 수 있지만 서로를 잘 모르는 관계를 의미한다. 보통의 경우 느슨한 결합은 전체 디자인의 유연성을 크게 향상시켜 유지보수성을 높여준다. 옵저버 패턴은이 느슨한 결합을 취하는데 여러 장점이 존재한다.
+
+1. 주제는 옵저버가 특정 인터페이스(Observer 인터페이스)를 구현한다는 사실만 안다.
+- 주제는 옵저버의 구현클래스를 전형 신경쓸 필요가 없고, 옵저버가 무엇을 하는지 알 필요가 없다.
+2. 옵저버는 언제는 새로 추가할 수 있습니다.
+- 주제는 언제는 새로운 옵저버를 추가/제거 할 수 있다.
+3. 새로운 형식의 옵저버를 추가할 떄도 주제를 변경할 필요가 전혀 없다.
+- Observer 인터페이스를 지키면 주제는 변경될 필요가 없다.
+4. 주제와 옵저버는 서로 독립적으로 재사용할 수 있습니다.
+- 서로 단단히 결합되어있지 않기 때문에 손쉽게 재사용이 가능하다.
+5. 주제나 옵저버가 달라져도 서로에게 영향을 미치지는 않습니다.
+- 인터페이스만 만족하면 주제의 변경이나 옵저버의 변경이 서로 전파되지 않는다.
+
+위 옵저버 패턴은 단점이 하나 존재한다.
+
+## 라이브러리 속 옵저버 패턴 알아보기

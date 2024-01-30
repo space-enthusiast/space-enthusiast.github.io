@@ -1,0 +1,96 @@
+---
+layout: post
+title: "GOF chapter 1"
+tags: [design pattern, GOF]
+categories: [study, book]
+date: 2024-01-01 00:00:00 +0000
+---
+
+> 다음 포스트는 책 내용 정리 포스트입니다.
+
+# 전략 패턴 (Strategy Pattern)
+
+전략 패턴이란 알고리즘군을 정의하고 캡슐화해서 각각의 알고리즘군을 수정해서 쓸 수 있게 해줍니다. 전략 패턴을 사용하면 클라이언트로부터 알고리즘을 분리해서 독립적으로 변경할 수 있습니다.
+
+> 디자인 원칙: 애플리케이션에서 달라지는 부분을 찾아내고 달라지지 않는 부분과 분리한다.
+{: .prompt-tip }
+
+> 디자인 원칙: 구현보다 인터페이스에 맞춰서 프로그래밍한다.
+{: .prompt-tip }
+
+> 디자인 원칙: 상속보다 구성을 활용한다.
+{: .prompt-tip }
+
+```java
+interface FlyBehavior {
+    public void fly();
+}
+
+class FlyWithWings implements FlyBehavior {
+  public void fly() {
+    System.out.println("fly with wings");
+  }
+}
+
+public class FlyNoWay implements FlyBehavior {
+  public void fly() {
+    System.out.println("fly no way");
+  }
+}
+
+interface QuackBehavior {
+  public void quack();
+}
+
+public class Quack implements QuackBehavior {
+  public void quack() {
+    System.out.println("quack");
+  }
+}
+
+public class MuteQuack implements QuackBehavior {
+  public void quack() {
+    System.out.println("mute quack");
+  }
+}
+
+public abstract class Duck {
+  private final FlyBehavior flyBehavior;
+  private final QuackBehavior quackBehavior;
+
+  public Duck(FlyBehavior fb, QuackBehavior qb) {
+    this.flyBehavior = fb;
+    this.quackBehavior = qb;
+  }
+
+  public void performQuack() {
+    this.quackBehavior.quack();
+  }
+
+  public void performFly() {
+    this.flyBehavior.fly();
+  }
+
+  public abstract void display();
+}
+
+public class MallarDuck extends Duck {
+  public MallarDuck() {
+    super(new FlyWithWings(), new Quack());
+  }
+
+  public void display() {
+    System.out.println("I'm a Mallard duck");
+  }
+}
+
+public class RubberDuck extends Duck {
+  public RubberDuck() {
+    super(new FlyNoWay(), new MuteQuack());
+  }
+
+  public void display() {
+    System.out.println("I'm a Rubber duck");
+  }
+}
+```

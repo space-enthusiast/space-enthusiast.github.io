@@ -18,9 +18,8 @@ date: 2023-12-05 07:06:10 +0000
 4. systemctl start qemu-gurst-agent
 5. sudo apt install containerd (systemctl status containerd)
 6. sudo mkdir /etc/containerd
-7. containerd config default | sudo tee /etc/containerd/config.toml
-8. sudo nano /etc/containerd/config.toml
-   set SystemdCgroup to true
+7. `containerd config default | sudo tee /etc/containerd/config.toml` (cat /etc/containerd/config.toml)
+8. set SystemdCgroup to true (`sudo nano /etc/containerd/config.toml`)
 ```
 [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
             BinaryName = ""
@@ -33,11 +32,11 @@ date: 2023-12-05 07:06:10 +0000
             NoPivotRoot = false
             Root = ""
             ShimCgroup = ""
-            SystemdCgroup = true
+            SystemdCgroup = true # 이 부분 true로 수정
 ```
-9. sudo nano /etc/fstab
-   disable swap by commenting the `/swap.img       none    swap    sw      0       0`
-   by adding a '#' at the first line
+9. disabled swap (`sudo nano /etc/fstab`)
+disable swap by commenting the `/swap.img       none    swap    sw      0       0`
+by adding a '#' at the first line
 ```
 # /etc/fstab: static file system information.
 #
@@ -52,10 +51,8 @@ date: 2023-12-05 07:06:10 +0000
 /dev/disk/by-uuid/48146b30-37e8-409a-b5cd-65cbc6e7b5a2 /boot ext4 defaults 0 1
 #/swap.img       none    swap    sw      0       0
 ```
-10. sudo nano /etc/sysctl.conf
-    uncomment the `net.ipv4.ip_forward=1`
+10. uncomment the `net.ipv4.ip_forward=1` (`sudo nano /etc/sysctl.conf`)
 ```
-...
 # Uncomment the next line to enable TCP/IP SYN cookies
 # See http://lwn.net/Articles/277146/
 # Note: This may impact IPv6 TCP sessions too
@@ -68,10 +65,10 @@ net.ipv4.ip_forward=1
 #  Enabling this option disables Stateless Address Autoconfiguration
 #  based on Router Advertisements for this host
 #net.ipv6.conf.all.forwarding=1
-...
 ```
-11. sudo nano /etc/modules-load.d/k8s.conf
-    create file and add following content (ensures briging is fully supported in the cluster)
+
+11. create file and add following content (ensures briging is fully supported in the cluster) (`sudo nano /etc/modules-load.d/k8s.conf`)
+add this content to the above file
 ```
 br_netfilter
 ```
@@ -81,6 +78,7 @@ br_netfilter
 ```
 sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 ```
+
 2. add the k8s repository & update it
 ```
 sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://dl.k8s.io/apt/doc/apt-key.gpg
@@ -89,6 +87,7 @@ echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https:/
 
 sudo apt-get update -y
 ```
+
 3. install k8s related cli tool
 ```
 sudo apt install kubeadm kubectl kubelet
@@ -97,6 +96,7 @@ sudo apt install kubeadm kubectl kubelet
 # kubectl: command line utility
 # kubelet: agent to faciltates communication between the nodes api's for additonal functionality
 ```
+
 4. process for proxmos template creation (optional)
 ```
 sudo cloud-init clean
@@ -111,8 +111,10 @@ sudo ln -s /etc/machine-id /var/lib/dbus/machine-id
 
 ls -l /var/lib/dbus/machine-id #(optional check if its correctly linked)
 ```
+
 > this process had a ip problem add this to the `/etc/netplan/00-installer-config.yaml` to prevent having correct ip added
 > test with `sudo netplan try`
+
 ```
 network:
   ethernets:
@@ -122,11 +124,14 @@ network:
 ```
 
 5. (caution do this only on control k8s node)
+do not change the `--pod-network-cidr` only set the `--control-plane-endpoint` to k8s control node ip
 ```
 sudo kubeadm init --control-plane-endpoint={ip_address_of_the_control_node} --node-name k8s-ctrl --pod-network-cidr=10.244.0.0/16
 ```
 
-6. if the previous command was successful following ouput will comeout
+sudo kubeadm init --control-plane-endpoint=192.168.1.139 --node-name k8s-ctrl --pod-network-cidr=10.244.0.0/16
+
+if the previous command was successful following ouput will comeout
 ```
 Your Kubernetes control-plane has initialized successfully!
 
@@ -156,12 +161,19 @@ Then you can join any number of worker nodes by running the following on each as
 kubeadm join 192.168.35.88:6443 --token w0dpyl.86ei9709rbrchc1b \
         --discovery-token-ca-cert-hash sha256:361b0a63f3c930c09b44d959bf416aa5772687349aab21b45e7666c258b0a79a
 ```
+
+```
+sudo kubeadm join 192.168.1.139:6443 --token mlz4ks.gjiulql5r0ubk28y \
+	--discovery-token-ca-cert-hash sha256:40817f088465bec3f5dd081c6e4697b2d6bca4b3e9d48444ac9751bcdfe87863
+```
+
 7. add kube config to let local user manage the cluster (from the above output)
 ```
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
+
 8. after this most of the ctrol node k8s is completed excepto for the overlay network you can check it by the below command
 ```
 ubuntu@ubuntu:~$ kubectl get pods --all-namespaces
@@ -174,6 +186,7 @@ kube-system   kube-controller-manager-k8s-ctrl   1/1     Running   0          6m
 kube-system   kube-proxy-lrst9                   1/1     Running   0          6m38s
 kube-system   kube-scheduler-k8s-ctrl            1/1     Running   0          6m57s
 ```
+
 9. The following command will install the Flannel overlay network (an overlay network is required for this to function).
 ```
 kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
@@ -193,7 +206,7 @@ kubeadm token create --print-join-command
 
 ## validate your cluster by running a simple nginx pod
 
-1, pod yml
+1. pod yml
 ```
 apiVersion: v1
 kind: Pod
@@ -210,7 +223,38 @@ spec:
           name: "nginx-http"
 ```
 
-2. apply pod yml to cluster
+2. service tml
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-example
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      nodePort: 30080
+      targetPort: nginx-http
+  selector:
+app: nginx
+```
+
+3. apply pod yml to cluster
 ```
 kubectl apply -f pod.yml
+kubectl apply -f service.yml
+```
+
+4. `curl $(kubectl get service | grep nginx-example | awk '{print $3}'):80`
+
+5. `kubectl version`
+
+
+# download helm
+
+```
+$ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+$ chmod 700 get_helm.sh
+$ ./get_helm.sh
 ```
