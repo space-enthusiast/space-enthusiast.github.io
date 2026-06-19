@@ -35,9 +35,18 @@ const lockedLinks = [
 <PageLayout title={HOME.TITLE} description={HOME.DESCRIPTION}>
   <Container>
     <div class="space-y-16">
-      <h4 class="animate font-semibold text-black dark:text-white">
-        안녕하세요, 코프링조아입니다 <span class="text-xl">👋🏻</span>
-      </h4>
+      <div class="animate flex items-center gap-4">
+        <img
+          src="/assets/img/avatar.jpeg"
+          alt="코프링조아"
+          width="80"
+          height="80"
+          class="size-20 rounded-full object-cover ring-1 ring-black/10 dark:ring-white/15 shrink-0"
+        />
+        <h4 class="font-semibold text-black dark:text-white">
+          안녕하세요, 코프링조아입니다 <span class="text-xl">👋🏻</span>
+        </h4>
+      </div>
 
       <!-- Profile -->
       <section class="animate space-y-3">
