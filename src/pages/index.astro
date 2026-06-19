@@ -1,0 +1,243 @@
+---
+import { getCollection } from "astro:content";
+import Container from "@components/Container.astro";
+import PageLayout from "@layouts/PageLayout.astro";
+import ArrowCard from "@components/ArrowCard.astro";
+import Link from "@components/Link.astro";
+import { SITE, HOME } from "@consts";
+
+const blog = (await getCollection("blog"))
+  .filter(post => !post.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, SITE.NUM_POSTS_ON_HOMEPAGE);
+
+const games = ["Pragmata (100%)", "Minecraft", "Overwatch", "League Of Legends"];
+
+const movies = [
+  "Project Hail Mary",
+  "Stranger Things",
+  "Rick And Morty",
+  "Interstellar",
+  "Martian",
+  "Harry Potter",
+  "Eternal Sunshine",
+];
+
+const books = ["Project Hail Mary (Reading)", "부분과 전체 (Reading)"];
+
+const lockedLinks = [
+  { name: "Twitter",    b64: "aHR0cHM6Ly94LmNvbS9UazJ6M25oWm03SkFNbVg=" },
+  { name: "Bluesky",    b64: "aHR0cHM6Ly9ic2t5LmFwcC9wcm9maWxlL2VzdGViYW4wODI5LmJza3kuc29jaWFs" },
+  { name: "Hackerspub", b64: "aHR0cHM6Ly9oYWNrZXJzLnB1Yi9AZXN0ZWJhbjA4Mjk=" },
+];
+---
+
+<PageLayout title={HOME.TITLE} description={HOME.DESCRIPTION}>
+  <Container>
+    <div class="space-y-16">
+      <h4 class="animate font-semibold text-black dark:text-white">
+        안녕하세요, 코프링조아입니다 <span class="text-xl">👋🏻</span>
+      </h4>
+
+      <!-- Profile -->
+      <section class="animate space-y-3">
+        <h5 class="font-semibold text-black dark:text-white">Profile</h5>
+        <ul class="space-y-1">
+          <li>
+            연락처: <Link href={`mailto:${SITE.EMAIL}`} aria-label="Email">{SITE.EMAIL}</Link>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Links -->
+      <section class="animate space-y-3">
+        <h5 class="font-semibold text-black dark:text-white">Links</h5>
+        <ul class="space-y-1">
+          <li>Personal Site</li>
+          <li>
+            <Link href="https://github.com/space-enthusiast/" external aria-label="GitHub">GitHub</Link>
+          </li>
+          <li>
+            <Link href="https://www.linkedin.com/in/kim-jung-931069308/" external aria-label="LinkedIn">LinkedIn</Link>
+          </li>
+          {lockedLinks.map(({ name, b64 }) => (
+            <li class="locked-item flex items-center gap-2" data-name={name} data-url={b64}>
+              <span class="locked-label opacity-60">{name}</span>
+              <button
+                type="button"
+                class="lock-btn inline-flex items-center justify-center size-5 opacity-60 hover:opacity-100 transition-opacity"
+                aria-label={`Unlock ${name}`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+                </svg>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <form
+          id="unlock-form"
+          class="hidden flex flex-wrap items-center gap-2 pt-1"
+          autocomplete="off"
+        >
+          <input
+            id="unlock-input"
+            type="password"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="••••••"
+            class="rounded border border-black/20 dark:border-white/30 bg-transparent px-2 py-1 text-sm focus:outline-none focus:border-black dark:focus:border-white"
+          />
+          <button
+            type="submit"
+            class="rounded border border-black/20 dark:border-white/30 px-2 py-1 text-sm hover:bg-black/5 dark:hover:bg-white/5"
+          >Unlock</button>
+          <button
+            type="button"
+            id="unlock-cancel"
+            class="text-sm opacity-60 hover:opacity-100"
+          >취소</button>
+          <span id="unlock-msg" class="text-sm text-red-500 hidden">틀렸어요</span>
+        </form>
+      </section>
+
+      <!-- Likes -->
+      <section class="animate space-y-3">
+        <h5 class="font-semibold text-black dark:text-white">Likes</h5>
+        <p>
+          I like memes, planes, space, astro physics (toddler level),
+          math (also toddler level) and most of all programming :)
+        </p>
+      </section>
+
+      <!-- Games -->
+      <section class="animate space-y-3">
+        <h5 class="font-semibold text-black dark:text-white">Games</h5>
+        <ul class="space-y-1">
+          {games.map(g => <li>{g}</li>)}
+        </ul>
+      </section>
+
+      <!-- Movies & Show -->
+      <section class="animate space-y-3">
+        <h5 class="font-semibold text-black dark:text-white">Movies &amp; Show</h5>
+        <ul class="space-y-1">
+          {movies.map(m => <li>{m}</li>)}
+        </ul>
+      </section>
+
+      <!-- Books -->
+      <section class="animate space-y-3">
+        <h5 class="font-semibold text-black dark:text-white">Books</h5>
+        <ul class="space-y-1">
+          {books.map(b => <li>{b}</li>)}
+        </ul>
+      </section>
+
+      <!-- Latest posts -->
+      <section class="animate space-y-6">
+        <div class="flex flex-wrap gap-y-2 items-center justify-between">
+          <h5 class="font-semibold text-black dark:text-white">
+            Latest posts
+          </h5>
+          <Link href="/blog">
+            See all posts
+          </Link>
+        </div>
+        <ul class="flex flex-col gap-4">
+          {blog.map(post => (
+            <li>
+              <ArrowCard entry={post} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  </Container>
+</PageLayout>
+
+<script>
+  // SHA-256 of the unlock passphrase. Plaintext never appears in the source.
+  const LOCK_HASH =
+    "5344ef0291ff4b357f9c5a99b591458e5aab6b3deb21aee7754dfe416413c960";
+
+  async function sha256Hex(s: string): Promise<string> {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  function revealAll() {
+    document.querySelectorAll<HTMLLIElement>(".locked-item").forEach(li => {
+      const name = li.dataset.name ?? "";
+      const url = atob(li.dataset.url ?? "");
+      li.classList.remove("flex", "items-center", "gap-2");
+      li.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 decoration-black/15 dark:decoration-white/30 hover:text-black dark:hover:text-white transition-colors">${name}</a>`;
+    });
+    document.getElementById("unlock-form")?.classList.add("hidden");
+  }
+
+  function openForm() {
+    const form = document.getElementById("unlock-form");
+    const input = document.getElementById("unlock-input") as HTMLInputElement | null;
+    const msg = document.getElementById("unlock-msg");
+    msg?.classList.add("hidden");
+    form?.classList.remove("hidden");
+    if (input) {
+      input.value = "";
+      input.focus();
+    }
+  }
+
+  function closeForm() {
+    document.getElementById("unlock-form")?.classList.add("hidden");
+    const msg = document.getElementById("unlock-msg");
+    msg?.classList.add("hidden");
+  }
+
+  function init() {
+    if (localStorage.getItem("links-unlocked") === "1") {
+      revealAll();
+      return;
+    }
+
+    // Bind lock buttons (idempotent — guard with dataset.bound)
+    document.querySelectorAll<HTMLButtonElement>(".lock-btn").forEach(btn => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", openForm);
+    });
+
+    const form = document.getElementById("unlock-form") as HTMLFormElement | null;
+    if (form && form.dataset.bound !== "1") {
+      form.dataset.bound = "1";
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const input = document.getElementById("unlock-input") as HTMLInputElement | null;
+        const msg = document.getElementById("unlock-msg");
+        if (!input) return;
+        const h = await sha256Hex(input.value);
+        if (h === LOCK_HASH) {
+          localStorage.setItem("links-unlocked", "1");
+          revealAll();
+        } else {
+          msg?.classList.remove("hidden");
+          input.value = "";
+          input.focus();
+        }
+      });
+    }
+
+    const cancel = document.getElementById("unlock-cancel");
+    if (cancel && cancel.dataset.bound !== "1") {
+      cancel.dataset.bound = "1";
+      cancel.addEventListener("click", closeForm);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("astro:page-load", init);
+</script>

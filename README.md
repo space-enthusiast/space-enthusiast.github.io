@@ -1,63 +1,56 @@
-# Chirpy Starter
+# space-enthusiast.github.io
 
-[![Gem Version](https://img.shields.io/gem/v/jekyll-theme-chirpy)][gem]&nbsp;
-[![GitHub license](https://img.shields.io/github/license/cotes2020/chirpy-starter.svg?color=blue)][mit]
+근본있는 공부를 추구하는 블로그. [Astro Nano](https://github.com/markhorn-dev/astro-nano) 기반.
 
-When installing the [**Chirpy**][chirpy] theme through [RubyGems.org][gem], Jekyll can only read files in the folders
-`_data`, `_layouts`, `_includes`, `_sass` and `assets`, as well as a small part of options of the `_config.yml` file
-from the theme's gem. If you have ever installed this theme gem, you can use the command
-`bundle info --path jekyll-theme-chirpy` to locate these files.
+## Local development
 
-The Jekyll team claims that this is to leave the ball in the user’s court, but this also results in users not being
-able to enjoy the out-of-the-box experience when using feature-rich themes.
+이 리포는 `flake.nix`로 Node.js 런타임을 고정합니다. Nix를 통한 dev shell 안에서 모든 명령을 실행하세요.
 
-To fully use all the features of **Chirpy**, you need to copy the other critical files from the theme's gem to your
-Jekyll site. The following is a list of targets:
+```bash
+# enter dev shell (Node 22 from Nix)
+nix develop
 
-```shell
-.
-├── _config.yml
-├── _plugins
-├── _tabs
-└── index.html
+# install deps (writes to ./node_modules — repo-local)
+npm install
+
+# run dev server
+npm run dev
+
+# build for production
+npm run build
+
+# preview the built output
+npm run preview
 ```
 
-To save you time, and also in case you lose some files while copying, we extract those files/configurations of the
-latest version of the **Chirpy** theme and the [CD][CD] workflow to here, so that you can start writing in minutes.
+`direnv` 사용자는 `direnv allow`만 하면 디렉토리 진입 시 자동으로 dev shell이 활성화됩니다 (`.envrc` 참조).
 
-## Prerequisites
+## Writing a post
 
-Follow the instructions in the [Jekyll Docs](https://jekyllrb.com/docs/installation/) to complete the installation of
-the basic environment. [Git](https://git-scm.com/) also needs to be installed.
+`src/content/blog/<slug>.md` 형식으로 생성:
 
-## Installation
-
-Sign in to GitHub and [**use this template**][use-template] to generate a brand new repository and name it
-`USERNAME.github.io`, where `USERNAME` represents your GitHub username.
-
-Then clone it to your local machine and run:
-
-```console
-$ bundle
-```
-
-## Usage
-
-Please see the [theme's docs](https://github.com/cotes2020/jekyll-theme-chirpy#documentation).
-
-## License
-
-This work is published under [MIT][mit] License.
-
-[gem]: https://rubygems.org/gems/jekyll-theme-chirpy
-[chirpy]: https://github.com/cotes2020/jekyll-theme-chirpy/
-[use-template]: https://github.com/cotes2020/chirpy-starter/generate
-[CD]: https://en.wikipedia.org/wiki/Continuous_deployment
-[mit]: https://github.com/cotes2020/chirpy-starter/blob/master/LICENSE
-
+```markdown
+---
+title: "포스트 제목"
+description: "한 줄 요약"
+date: 2026-06-20
+tags: [tag1, tag2]
+categories: [category]
 ---
 
-run this server with
+본문 내용...
 ```
-docker run  --name space-enthusiast -p 4000:4000 -v $(pwd):/site bretfisher/jekyll-serve
-``` 
+
+이미지는 `public/assets/<sub>/...` 에 두고 본문에서는 절대경로 `/assets/<sub>/...` 로 참조합니다.
+
+## Deploy
+
+`main` 브랜치에 푸시하면 `.github/workflows/deploy.yml` 이 Nix dev shell 안에서 빌드 후 GitHub Pages에 배포합니다.
+
+레포 Settings → Pages → Source 가 "GitHub Actions" 로 설정되어 있어야 합니다.
+
+## Stack
+
+- [Astro 5](https://astro.build) + [Tailwind CSS](https://tailwindcss.com) + TypeScript
+- 콘텐츠는 Astro content collections
+- Node.js 런타임은 Nix flake로 핀
