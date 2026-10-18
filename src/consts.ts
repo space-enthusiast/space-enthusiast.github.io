@@ -24,7 +24,7 @@ export const PROJECTS: Metadata = {
 export const PROJECT_LIST: Project[] = [
   {
     TITLE: "Kotlin on Web Playground",
-    DESCRIPTION: "Compile, run and autocomplete real Kotlin (K2) entirely inside your browser tab, no server",
+    DESCRIPTION: "The real Kotlin compiler, running in your browser tab",
     HREF: "https://space-enthusiast.github.io/kotlin-on-web-playground/",
     REPO: "https://github.com/space-enthusiast/kotlin-on-web-playground",
     DATE: "2026-10",
