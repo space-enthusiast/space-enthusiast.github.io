@@ -1,0 +1,29 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import Container from "@components/Container.astro";
+import ProjectCard from "@components/ProjectCard.astro";
+import Link from "@components/Link.astro";
+import { PROJECTS, PROJECT_LIST } from "@consts";
+---
+
+<PageLayout title={PROJECTS.TITLE} description={PROJECTS.DESCRIPTION}>
+  <Container>
+    <div class="space-y-10">
+      <div class="animate font-semibold text-black dark:text-white">
+        Projects
+      </div>
+      <ul class="animate flex flex-col gap-4">
+        {PROJECT_LIST.map(project => (
+          <li class="space-y-2">
+            <ProjectCard project={project} />
+            {project.REPO && (
+              <div class="text-sm pl-1">
+                <Link href={project.REPO} external>source</Link>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </Container>
+</PageLayout>

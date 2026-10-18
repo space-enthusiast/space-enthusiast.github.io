@@ -13,3 +13,11 @@ export type Socials = {
   NAME: string;
   HREF: string;
 }[];
+
+export type Project = {
+  TITLE: string;
+  DESCRIPTION: string;
+  HREF: string;
+  REPO?: string;
+  DATE: string;
+};
