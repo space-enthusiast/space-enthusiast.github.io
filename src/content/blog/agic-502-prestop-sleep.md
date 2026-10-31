@@ -33,12 +33,14 @@ Pod 를 지우면 쿠버네티스는 아래 두 가지를 **동시에** 시작�
 kube-proxy 나 클러스터 안의 ingress 컨트롤러는 Endpoints 변화를 거의 바로 따라간다. 그런데 AGIC 는 이렇게 동작한다.
 
 ```
-t=0     Pod 삭제 → Endpoints 에서 제거 + SIGTERM
-t=0~    앱 종료, Pod IP 죽음
-t=?     AGIC 가 변경 감지 → AGW 설정 전체 생성 → ARM 업데이트 요청
-t=??    AGW 반영 완료 (몇십 초 ~ 몇 분 뒤)
+t=0   Pod 삭제
+      → Endpoints 에서 제거 + SIGTERM
+      → 앱 종료, Pod IP 죽음
+t=?   AGIC 가 변경 감지
+      → AGW 설정 전체 생성 → ARM 업데이트
+t=??  AGW 반영 완료 (몇십 초 ~ 몇 분 뒤)
 
-        [ t=0 ~ t=?? ] 동안 AGW 는 죽은 IP 로 요청을 보낸다 → 502
+t=0 ~ t=?? 동안 AGW 는 죽은 IP 로 요청 → 502
 ```
 
 공식 문서에도 AGW backend 에서 Pod 가 빠지는데 **"1초에서 몇 분"** 걸린다고 적혀 있다. GitHub 이슈에서는 AGW 재구성 한번에 45~60초 정도 걸리고, 이전 재구성이 끝나야 다음 재구성이 시작된다는 얘기도 나온다. 롤링 업데이트처럼 Pod 가 줄줄이 바뀌면 AGW 는 계속 한 박자씩 늦는다.
@@ -89,12 +91,10 @@ metadata:
     appgw.ingress.kubernetes.io/connection-draining-timeout: "30"
 ```
 
-| 설정 | 값 | 역할 |
-|---|---|---|
-| preStop sleep | 90초 | AGW 가 따라올 때까지 Pod 를 살려둔다 |
-| terminationGracePeriodSeconds | 90초 이상 | sleep 도중에 SIGKILL 당하지 않게 |
-| connection-draining | 30초 | pool 에서 빠진 뒤 진행중인 요청을 마저 처리 |
-| 짧은 probe 주기 | 4초 × 3회 | AGIC 가 AGW health probe 에도 반영해서 죽은 Pod 를 빨리 걸러낸다 |
+- **preStop sleep 90초.** AGW 가 따라올 때까지 Pod 를 살려둔다.
+- **`terminationGracePeriodSeconds` 90초 이상.** sleep 도중에 SIGKILL 당하지 않게 한다.
+- **connection draining 30초.** pool 에서 빠진 뒤 진행중인 요청을 마저 처리한다.
+- **짧은 probe 주기 (4초 × 3회).** AGIC 가 AGW health probe 에도 반영해서 죽은 Pod 를 빨리 걸러낸다.
 
 ## 함정 두개
 
@@ -131,7 +131,7 @@ lifecycle:
 
 차이는 **얼마나 늦게 따라오는지** 와 **새 Pod 쪽을 막아주는 장치가 있는지** 다.
 
-| | Azure AGIC | AWS Load Balancer Controller | GKE (NEG) |
+| 구분 | Azure AGIC | AWS LB Controller | GKE (NEG) |
 |---|---|---|---|
 | 백엔드 갱신 방식 | AGW 리소스 전체를 ARM 으로 업데이트 | Target Group 에 변경된 타겟만 Register / Deregister | NEG 에 엔드포인트 attach / detach |
 | 업데이트 단위 | 게이트웨이 하나에 한번에 하나 | 타겟 단위 | 엔드포인트 단위 |
@@ -165,7 +165,10 @@ AGIC 에는 이게 없다. 그래서 AGW 의 느림이 그대로 502 로 튀어�
 AGW 를 Pod 에 직접 꽂지 말고 한단계를 끼운다.
 
 ```
-AGW (WAF, TLS) → 내부 LB (고정 IP) → 클러스터 내부 ingress / Gateway → Pod
+AGW (WAF, TLS)
+  → 내부 LB (고정 IP)
+  → 클러스터 내부 ingress / Gateway
+  → Pod
 ```
 
 - AGW backend pool 에는 내부 LB IP 하나만 들어간다. 앱을 배포해도 **AGW 설정이 아예 안 바뀐다.**
@@ -227,11 +230,11 @@ AGW 가 빨리 반영하면 빨리 끝나고, 늦으면 끝까지 기다린다. 
 
 | 방법 | 502 | 배포 시간 | 작업량 |
 |---|---|---|---|
-| preStop sleep 90 (공식) | 줄어듦, 0 은 아님 | Pod 당 +90초 | 매니페스트 몇줄 |
-| + minReadySeconds | 새 Pod 쪽까지 줄어듦 | 더 늘어남 | 매니페스트 몇줄 |
-| 조건부 preStop | 줄어듦 | AGW 속도만큼 | 권한, 스크립트, 이미지 |
-| AGW → 내부 LB → 내부 ingress | AGW 쪽 원인 제거 | sleep 5~10초 | 컴포넌트 하나 추가 |
-| AGC 로 이전 | AGIC 구조 문제 제거 (수치는 직접 측정 필요) | 측정 필요 | 이전 작업 |
+| sleep 90 (공식) | 줄어듦 | +90초 | 적음 |
+| + minReadySeconds | 더 줄어듦 | 더 늘어남 | 적음 |
+| 조건부 preStop | 줄어듦 | AGW 만큼 | 중간 |
+| 내부 ingress | 원인 제거 | +5~10초 | 중간 |
+| AGC 이전 | 원인 제거 | 측정 필요 | 큼 |
 
 # 마치며
 
